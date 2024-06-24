@@ -1,0 +1,211 @@
+<% layout('layout/root_layout') -%>
+<% block('title', 'Kashif Data'); -%>
+
+<!-- Content Header (Page header) -->
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Statistics</h1>
+            </div><!-- /.col -->
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item">
+                        search statistics
+                    </li>
+                </ol>
+            </div><!-- /.col -->
+        </div><!-- /.row -->
+    </div><!-- /.container-fluid -->
+</div>
+<!-- /.content-header -->
+
+<!-- Main content -->
+<div class="content" id="">
+
+    <div class="col-md-12">
+        <form id="filterForm">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <!-- Start Date -->
+                        <div class="form-group">
+                            <div class="input-group date" id="startDate" data-target-input="nearest">
+                                <input
+                                        type="text"
+                                        id="startDateInput"
+                                        name="startDate"
+                                        class="form-control datetimepicker-input"
+                                        data-target="#startDate"
+                                />
+                                <div
+                                        class="input-group-append"
+                                        data-target="#startDate"
+                                        data-toggle="datetimepicker"
+                                >
+                                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <!-- Start Date -->
+                        <div class="form-group">
+                            <div class="input-group date" id="endDate" data-target-input="nearest">
+                                <input
+                                        type="text"
+                                        name="endDate"
+                                        id="endDateInput"
+                                        class="form-control datetimepicker-input"
+                                        data-target="#endDate"
+                                />
+                                <div
+                                        class="input-group-append"
+                                        data-target="#endDate"
+                                        data-toggle="datetimepicker"
+                                >
+                                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <input
+                                    type="text"
+                                    name="carPlate"
+                                    class="form-control"
+                                    id="exampleInputEmail1"
+                                    placeholder="Enter Car Plate"
+                            >
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">Filter</button>
+                            <button id="exportExcel" type="button" class="btn btn-success">To Excel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row">
+        <div class="col-lg-4 col-xs-12 col-md-6">
+            <!-- small box -->
+            <div class="small-box bg-info">
+                <div class="inner">
+                    <h3 id="totalKashifResponse">-</h3>
+                    <p>Total Kashif Responses</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-chart-line"></i>
+                </div>
+            </div>
+        </div>
+        <!-- ./col -->
+
+        <div class="col-lg-4 col-xs-12 col-md-6">
+            <!-- small box -->
+            <div class="small-box bg-success">
+                <div class="inner">
+                    <h3>
+                        <span id="totalCorrectKashifResponse">-</span>
+                    </h3>
+                    <p>Completed</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-check"></i>
+                </div>
+            </div>
+        </div>
+        <!-- ./col -->
+
+        <div class="col-lg-4 col-xs-12 col-md-6">
+            <!-- small box -->
+            <div class="small-box bg-danger">
+                <div class="inner">
+                    <h3>
+                        <span id="totalFaultKashifResponse">-</span>
+                    </h3>
+                    <p>Not Completed</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-minus"></i>
+                </div>
+            </div>
+        </div>
+        <!-- ./col -->
+
+
+    </div>
+
+    <!-- Report Graphs -->
+    <!-- Left col -->
+    <div class="row">
+
+        <section class="col-md-6 connectedSortable">
+
+            <!-- Custom tabs (Charts with tabs)-->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-pie mr-1"></i>
+                        Kashif Responses
+                    </h3>
+                </div><!-- /.card-header -->
+                <div class="card-body">
+                    <div id="kashifResponsePercentage" style="width: 100%; height: 400px;"></div>
+                </div><!-- /.card-body -->
+            </div>
+            <!-- /.card -->
+
+        </section>
+
+        <section class="col-md-6 connectedSortable">
+
+            <!-- Custom tabs (Charts with tabs)-->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-pie mr-1"></i>
+                        Wanted Status Code
+                    </h3>
+                </div><!-- /.card-header -->
+                <div class="card-body">
+                    <div id="kashifWantedStatusCode" style="width: 100%; height: 400px;"></div>
+                </div><!-- /.card-body -->
+            </div>
+            <!-- /.card -->
+
+        </section>
+
+
+        <section class="col-md-12 connectedSortable">
+
+            <!-- Custom tabs (Charts with tabs)-->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-pie mr-1"></i>
+                        Legal Status Code
+                    </h3>
+                </div><!-- /.card-header -->
+                <div class="card-body">
+                    <div id="kashifLegalStatusCode" style="width: 100%; height: 400px;"></div>
+                </div><!-- /.card-body -->
+            </div>
+            <!-- /.card -->
+
+        </section>
+
+    </div>
+
+</div>
+<!-- /.content -->
+
+
+<% script('res_codes.js') -%>
+<% script('statistics.js') -%>

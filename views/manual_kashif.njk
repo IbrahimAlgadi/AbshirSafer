@@ -1,0 +1,170 @@
+<% layout('layout/root_layout') -%>
+    <% block('title', 'Manual Kashif Data' ); -%>
+
+        <!-- Content Header (Page header) -->
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0">Manual Search</h1>
+                    </div><!-- /.col -->
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item">
+                                search manually
+                            </li>
+                        </ol>
+                    </div><!-- /.col -->
+                </div><!-- /.row -->
+            </div><!-- /.container-fluid -->
+        </div>
+        <!-- /.content-header -->
+
+        <!-- Main content -->
+        <div class="content" id="">
+
+            <div class="col-md-12">
+                <form id="searchKashifForm">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <!-- Start Date -->
+                                <div class="form-group">
+                                    <div class="input-group date" id="plateNumbers" data-target-input="nearest">
+                                        <input type="number" name="plateNumbers" class="form-control" id="plateNumbers"
+                                            placeholder="Plate Numbers (1234)" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <!-- Start Date -->
+                                <div class="form-group">
+                                    <div class="input-group date" id="arabicLetters" data-target-input="nearest">
+                                        <input type="text" name="arabicLetters" class="form-control" id="arabicLetters"
+                                            placeholder="Plate Arabic Letters (أبج)" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <!-- Start Date -->
+                                <div class="form-group">
+                                    <div class="input-group date" id="englishLetters" data-target-input="nearest">
+                                        <input type="text" name="englishLetters" class="form-control"
+                                            id="englishLetters" placeholder="Plate English Letters (ABC)">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <!-- Start Date -->
+                                <div class="form-group">
+                                    <select class="form-control js-example-templating" name="plateType"
+                                        data-placeholder="Select Plate Type" required>
+                                        <option value="white">Private Car White (خصوصي ابيض)</option>
+                                        <option value="yellow">Public Car Yellow (نقل عام اصفر)</option>
+                                        <option value="blue">Public Car Blue (نقل خاص ازرق)</option>
+                                        <option value="grey">Export/Temporary Grey (تصدير/مؤقت رمادي)</option>
+                                        <option value="green">Diplomatic Green (دبلوماسي اخضر)</option>
+                                    </select>
+                                </div>
+
+                            </div>
+
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-primary">Search Car</button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="col-md-12">
+                <div id="accordion">
+                    <!--  Wanted Status -->
+                    <div id="wantedStatusCard" class="card white-border bg-theme">
+                        <div class="card-header">
+                            <h4 class="card-title w-100">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="">
+                                        Wanted Status Code
+                                    </div>
+                                    <div id="wantedStatusMappingText" class="">
+                                        N/A
+                                    </div>
+                                </div>
+                            </h4>
+                        </div>
+                    </div>
+                    <!--  Wanted Status -->
+
+                    <!--  Car Info -->
+                    <div class="card white-border bg-theme">
+                        <div class="card-header">
+                            <h4 class="card-title w-100">
+                                <a class="d-block w-100 text-white" data-toggle="collapse" href="#collapseOne">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="">
+                                            More Car Info
+                                        </div>
+                                        <div id="carInfoIndicator" class="">
+                                            N/A
+                                        </div>
+                                    </div>
+                                </a>
+                            </h4>
+                        </div>
+                        <div id="collapseOne" class="collapse show" data-parent="#accordion">
+                            <div class="card-body">
+                                <table class="table table-head-fixed text-nowrap">
+                                    <tbody id="carInfoTableBody">
+
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <!--  Car Info -->
+
+                    <!--  Legal Status -->
+                    <div class="card bg-theme white-border">
+                        <div class="card-header">
+                            <h4 class="card-title w-100">
+                                <a class="d-block w-100 text-white collapse show" data-toggle="collapse"
+                                    href="#collapseThree">
+
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="">
+                                            Legal Status Codes
+                                        </div>
+                                        <div class="">
+                                            (<span id="totalStatusCodeData">0</span>) Legal Status Data
+                                        </div>
+                                    </div>
+
+                                </a>
+                            </h4>
+                        </div>
+                        <div id="collapseThree" class="collapse show" data-parent="#accordion">
+                            <div class="card-body table-responsive p-0" style="height: 150px;">
+
+                                <table class="table table-head-fixed text-nowrap">
+                                    <tbody id="legalStatusTableData"></tbody>
+                                </table>
+
+                            </div>
+                        </div>
+                    </div>
+                    <!--  Legal Status -->
+
+                </div>
+            </div>
+
+        </div>
+        <!-- /.content -->
+
+
+        <% script('res_codes.js') -%>
+        <% script('manual_kashif.js') -%>

@@ -1,0 +1,104 @@
+{% extends './layout/root_layout.njk' %}
+{% block title %} Kashif Report {% endblock %}
+
+{% block content %}
+
+    <!-- /.container-fluid -->
+    <div class="container-fluid">
+        <div class="row pt-3">
+            <div class="col-6">
+
+                <!-- Profile Image -->
+                <div class="card card-primary card-outline">
+                    <div class="card-body box-profile">
+                        <div class="text-center">
+                            <img class="profile-user-img img-fluid img-circle"
+                                 src="../../dist/img/user4-128x128.jpg"
+                                 alt="User profile picture">
+                        </div>
+
+                        <h3 class="profile-username text-center text-black">
+                            Ibrahim Mohammed
+                        </h3>
+
+                        <p class="text-muted text-center">
+                            Systems Engineer
+                        </p>
+
+                        <ul class="list-group list-group-unbordered mb-3">
+                            <li class="list-group-item">
+                                <b>Department</b>
+                                <a class="float-right">Technical Support</a>
+                            </li>
+                            <li class="list-group-item">
+                                <b>ID</b>
+                                <a class="float-right">123456799829321</a>
+                            </li>
+                            <li class="list-group-item">
+                                <b>Mobile</b>
+                                <a class="float-right">+971544203125</a>
+                            </li>
+                            <li class="list-group-item">
+                                <b>Gender</b>
+                                <a class="float-right">Male</a>
+                            </li>
+                        </ul>
+
+                    </div>
+                    <!-- /.card-body -->
+                </div>
+                <!-- /.card -->
+
+            </div>
+            <!-- /.col -->
+            <div class="col-6">
+
+                <!-- Profile Image -->
+                <div class="card card-primary card-outline">
+                    <div class="card-body box-profile">
+                        <div class="row">
+                            <div class="col-12">
+                                <img 
+                                    class="img-fluid"
+                                    src="/assets/car_img.jpg"
+                                    style="height: 150px"
+                                    alt="User profile picture"
+                                >
+                            </div>
+                        </div>
+
+                        <ul class="list-group list-group-unbordered mb-3 mt-3">
+                            <li class="list-group-item">
+                                <b>Plate</b>
+                                <a class="float-right">75034-9-AD</a>
+                            </li>
+                            <li class="list-group-item">
+                                <b>Make</b>
+                                <a class="float-right">Vehicle Make</a>
+                            </li>
+                            <li class="list-group-item">
+                                <b>Model</b>
+                                <a class="float-right">Vehcile Model</a>
+                            </li>
+                            <li class="list-group-item">
+                                <b>Color</b>
+                                <a class="float-right">White</a>
+                            </li>
+                        </ul>
+
+                        <a href="#" class="btn btn-success btn-block">
+                            <b>Authorized</b>
+                        </a>
+                    </div>
+                    <!-- /.card-body -->
+                </div>
+                <!-- /.card -->
+
+            </div>
+            <!-- /.col -->
+        </div>
+        <!-- /.row -->
+    </div>
+    <!-- /.container-fluid -->
+
+{% endblock %}
