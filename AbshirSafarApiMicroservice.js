@@ -1,5 +1,9 @@
 const axios = require('axios');
 const uuid = require('uuid');
+const securos = require("securos");
+
+API_OBJECT_TYPE = "ABSHIR_API";
+API_OBJECT_ID = "1";
 
 VehicleRegistrationTypeModel = {
     PRIVATE: "PRIVATE",
@@ -11,7 +15,6 @@ VerificationTypeModel = {
     TOLL_FEE: "TOLL_FEE",
     INSURANCE: "INSURANCE"
 };
-
 
 // Error handling function
 const handleApiError = (error) => {
@@ -73,24 +76,6 @@ const handleApiError = (error) => {
 };
 
 class AbsherSafarAPI {
-    /**
-     * 
-     * Consume APIs to check whether car passengers are verified and authorized to pass through a lane gate. 
-     * The API is called after security camera recognition for the plate number. 
-     * It verifies whether the travelers have completed all necessary verification steps.
-     * 
-     * When the response is 200 then the vehicle can access the gate, when the response other than that, 
-     * then the vehicle is not allowed to do so.
-     * 
-     * @param {String} baseURL API base URL that can be configured to access the service
-     * @param {String} clientId Client id issued by security server
-     * @param {String} clientSecret ClientSecret issued by security server
-     * @param {String} acceptLanguage The language localization to be used on the response
-     * @param {String} userAgent The string that allows the network protocol peers to identify the application type, 
-     * operating system, software vendor or software version of the requesting software user agent
-     * @param {String} clientNonce Unique request id
-     * 
-     */
 
     constructor(baseURL, clientId, clientSecret, acceptLanguage, userAgent, clientNonce) {
 
@@ -138,31 +123,7 @@ class AbsherSafarAPI {
     }
 
     async getTravelRequest(transactionId) {
-        /**
-         * 
-         * Return the details of Travel request verification based on provided TransactionId
-         * 
-         * @param {String} transactionId This should be the uinque id that should saved on absher 
-         * to do the correlation between absher and every request comes from the clients
-         * Transaction Id used by the client to verify travel request
-         * 
-         * 
-{
-  "travelRequestSummaryModelList": [
-    {
-      "vehicleRegistrationType": "PRIVATE",
-      "vehiclePlateNumber": "ه ح ح 123",
-      "transactionId": "8c858e60-3ef7-4499-b67b-a6b714063e57",
-      "verificationDateTime": "31/12/2017 23:59:59",
-      "verificationtype": "TRAVEL_REQUEST"
-    }
-  ]
-}
-         *
-         *
-         */
-
-        // verify the required parameter 'transactionId' is set
+        // verify the required parameter 'clientId' is set
         if (!transactionId) 
             throw new Error("Missing the required parameter 'transactionId' when calling getTravelRequest");
 
@@ -170,7 +131,10 @@ class AbsherSafarAPI {
             const endPoint = `/TravelRequests?transactionIdFilter=${transactionId}`;
             // Send the POST request using the configured instance
             const response = await this.apiInstance.get(endPoint);
-            return response.data;
+            return {
+                "status": response.status,
+                "data": response.data
+            };
         } catch (error) {
             // console.log(error);
             const apiError = handleApiError(error);
@@ -179,39 +143,17 @@ class AbsherSafarAPI {
     }
 
     async verifyTravelRequest(travelRequest) {
-        /**
-         * Validation on vehicle to be able to open the gate
-         * 
-         * @param {Object} travelRequest This is the request body as the following
-{
-  "action": "VERIFY_TRAVEL_REQUEST",
-  "vehicleRegistrationType": "PRIVATE",
-  "vehiclePlateNumber": "ه ح ح 123",
-  "providerReferenceNumber": "ABC-123-xyz",
-  "hasTowingTrailer": true,
-  "transactionId": "8c858e60-3ef7-4499-b67b-a6b714063e57"
-}
-         * 200	The request has been successfully processed.
-         * 403  The server understood the request, but The Vehicle is not authorized to open the Gate.
-         * 
-         * 
-         * 
-         * 
-         */
         if (!travelRequest) 
             throw new Error("Missing the required parameter 'travelRequest' when calling verifyTravelRequest");
-        
-        if (!Object.values(VehicleRegistrationTypeModel).includes(travelRequest.vehicleRegistrationType))
-            throw new Error("Invalid vehicle registration type");
-    
-        if (!Object.values(VerificationTypeModel).includes(travelRequest.verificationType)) 
-            throw new Error("Invalid verification type");
 
         try {
             const endPoint = `/TravelRequests`;
             // Send the POST request using the configured instance
             const response = await this.apiInstance.patch(endPoint, travelRequest);
-            return response.data;
+            return {
+                "status": response.status,
+                "data": response.data
+            };
         } catch (error) {
             // console.log(error);
             const apiError = handleApiError(error);
@@ -230,42 +172,56 @@ const api = new AbsherSafarAPI(
     clientNonce = 'your-client-nonce'
 );
 
-const TRANSACTION_ID = uuid.v1();
-
 console.log('\r\n');
-// console.log("----------------------");
-// Verify travel request
-const travelRequest = {
-    action: VerificationTypeModel.TRAVEL_REQUEST,
-    vehicleRegistrationType: VehicleRegistrationTypeModel.PRIVATE,
-    vehiclePlateNumber: 'ه ح ح 123',
-    providerReferenceNumber: 'ABC-123-xyz',
-    hasTowingTrailer: true,
-    transactionId: TRANSACTION_ID
-};
-// Verify Travel Request
-api.verifyTravelRequest(travelRequest)
-    .then(data => console.log('Verification Response:\n', data))
-    .catch(error => console.error('Error verifying travel request:\n', error));
+securos.connect(async (core) => {
+    
+    const TRANSACTION_ID = uuid.v1();
 
-// TODO: Create Database Travel Request
-// lpr_id
-// lpr_name
-// cam_id
-// cam_name
-// plate_number
-// action (TRAVEL_REQUEST, TOLL_FEE, INSURANCE)
-// vehicle_registration_type (PRIVATE, PRIVATE_TRANSPORT)
-// vehicle_plate_number (string)
-// provider_reference_number (string)
-// has_towing_trailer (true, false)
-// transaction_id uuid
-// request_date (DATE)
-// request_time (TIME)
-// open_barrier (ALLOW=true, DENY=false)
+    /// console.log("----------------------");
+    // Get travel request
+    // api.getTravelRequest(TRANSACTION_ID)
+    //     .then(data => console.log('Travel Request Data:\n', data))
+    //     .catch(error => console.error('Error fetching travel request:\n', error));
 
-// console.log("----------------------");
-// Get travel request
-api.getTravelRequest(TRANSACTION_ID)
-    .then(data => console.log('Travel Request Data:\n', data))
-    .catch(error => console.error('Error fetching travel request:\n', error));
+    // console.log(core.selfType, core.selfId);
+    core.registerEventHandler(API_OBJECT_TYPE, API_OBJECT_ID, "VERIFY_TRAVEL_REQUEST", (e) => {
+        let RETURN_EVENT_UUID = e.params.return_uuid;
+        let RETURN_EVENT = e.params.return_event;
+        let travelRequest = {};
+        console.log(API_OBJECT_TYPE, API_OBJECT_ID, "VERIFY_TRAVEL_REQUEST", RETURN_EVENT_UUID, RETURN_EVENT);
+        // Verify travel request
+        travelRequest = {
+            action: VehicleRegistrationTypeModel.TRAVEL_REQUEST,
+            vehicleRegistrationType: VehicleRegistrationTypeModel.PRIVATE,
+            vehiclePlateNumber: 'ه ح ح 123',
+            providerReferenceNumber: 'ABC-123-xyz',
+            hasTowingTrailer: true,
+            transactionId: TRANSACTION_ID
+        };
+
+        // console.log("----------------------");
+        // Verify Travel Request
+        api.verifyTravelRequest(travelRequest)
+            .then(data => {
+                // console.log(API_OBJECT_TYPE, RETURN_EVENT_UUID, RETURN_EVENT, travelRequest);
+                core.sendEvent(API_OBJECT_TYPE, RETURN_EVENT_UUID, RETURN_EVENT, {
+                    "api": JSON.stringify({
+                        "result": data,
+                        "success": true
+                    })
+                })
+            })
+            .catch(error => {
+                console.error('Error verifying travel request:\n', error);
+                core.sendEvent(API_OBJECT_TYPE, RETURN_EVENT_UUID, RETURN_EVENT, {
+                    "api": JSON.stringify({
+                        "result": error,
+                        "success": false
+                    })
+                })
+            });
+
+    })
+
+})
+

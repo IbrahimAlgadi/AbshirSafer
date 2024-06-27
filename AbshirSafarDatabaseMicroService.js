@@ -45,6 +45,8 @@ CREATE TABLE travel_request (
     transaction_id VARCHAR,
     request_date DATE NOT NULL,
     request_time TIME NOT NULL,
+    request_status VARCHAR,
+    open_gate BOOL,
     FOREIGN KEY (request_source_id) REFERENCES request_source(id)
 );
  */
@@ -57,6 +59,7 @@ class AppDatabase {
     DB_APP = "vehicle_travel_request_db";
 
     async insertRequestSourceTravelRequest(requestSource, travelRequest) {
+        console.log(requestSource, travelRequest);
         const client = await pool.connect();
         let res;
 
@@ -96,7 +99,7 @@ class AppDatabase {
             );
 
             let requestSourceObj = res.rows[0];
-            console.log(requestSourceObj);
+            // console.log(requestSourceObj);
             let request_source_id = requestSourceObj.id;
             
             const query = `
@@ -110,7 +113,9 @@ class AppDatabase {
                 has_towing_trailer,
                 transaction_id,
                 request_date,
-                request_time
+                request_time,
+                request_status,
+                open_gate
             ) VALUES (
                 $1,
                 $2,
@@ -121,7 +126,9 @@ class AppDatabase {
                 $7,
                 $8,
                 $9,
-                $10   
+                $10,
+                $11,
+                $12   
             ) RETURNING (
                 id, 
                 request_source_id, 
@@ -133,7 +140,9 @@ class AppDatabase {
                 has_towing_trailer,
                 transaction_id,
                 request_date,
-                request_time
+                request_time,
+                request_status,
+                open_gate
             );
             `;
             res = await client.query(
@@ -149,6 +158,8 @@ class AppDatabase {
                     travelRequest.transaction_id,
                     travelRequest.request_date,
                     travelRequest.request_time,
+                    travelRequest.request_status,
+                    travelRequest.open_gate,
                 ]
             );
             let travelRequestObject = res.rows[0];
@@ -165,9 +176,9 @@ class AppDatabase {
         }
     }    
 
-    async getAllData() {
+    async getAllData(pageSize, pageNumber, searchParams, dateRange) {
         const client = await pool.connect();
-        const query = `
+        let query = `
             SELECT 
                 rs.lpr_id, 
                 rs.lpr_name,
@@ -183,16 +194,50 @@ class AppDatabase {
                 tr.has_towing_trailer,
                 tr.transaction_id,
                 tr.request_date,
-                tr.request_time
+                tr.request_time,
+                tr.request_status,
+                tr.open_gate
             FROM 
                 travel_request tr
             LEFT JOIN 
                 request_source rs ON tr.request_source_id = rs.id
-            ORDER BY 
-                tr.id DESC
+            WHERE 1=1
         `;
 
-        const result = await client.query(query, []);
+        const params = [];
+        let paramIndex = 1;
+
+        // Add search parameters
+        if (searchParams) {
+            for (const [key, value] of Object.entries(searchParams)) {
+                if (value) {
+                    query += ` AND ${key} ILIKE $${paramIndex}`;
+                    params.push(`%${value}%`);
+                    paramIndex++;
+                }
+            }
+        }
+
+        // Add date range filter
+        if (dateRange) {
+            if (dateRange.startDate) {
+                query += ` AND tr.request_date >= $${paramIndex}`;
+                params.push(dateRange.startDate);
+                paramIndex++;
+            }
+            if (dateRange.endDate) {
+                query += ` AND tr.request_date <= $${paramIndex}`;
+                params.push(dateRange.endDate);
+                paramIndex++;
+            }
+        }
+
+        // Add pagination
+        query += ` ORDER BY tr.id DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+        params.push(pageSize, pageSize * (pageNumber - 1));
+
+        const result = await client.query(query, params);
+        
         client.release();
         return result;
     }
@@ -204,8 +249,8 @@ console.log("\r\n");
 
 securos.connect(async (core) => {
     console.log("[*] Database Microservice Started: ");
-    console.log("[*] DB_API_OBJECT_TYPE=" + DB_API_OBJECT_TYPE);
-    console.log("[*] API_OBJECT_ID=" + API_OBJECT_ID);
+    console.log("[*] DB_API_OBJECT_TYPE = " + DB_API_OBJECT_TYPE);
+    console.log("[*] API_OBJECT_ID = " + API_OBJECT_ID);
 
     SECUROS_CORE = core;
 
@@ -242,17 +287,23 @@ securos.connect(async (core) => {
     core.registerEventHandler(DB_API_OBJECT_TYPE, API_OBJECT_ID, "getAllData", (e) => {
         // console.log(e);
         let param = JSON.parse(e.params.param);
-        let requestSource = param.requestSource;
-        let travelRequest = param.travelRequest;
+        // Pagination options
+        let pageSize = param.pageSize || 10;
+        let pageNumber = param.pageNumber || 1;
+        // Filtering with db fields
+        let searchParams = param.searchParams || {};
+        // Filtering with date range 
+        let dateRange = param.dateRange || {};
+
         let RETURN_EVENT_UUID = e.params.return_uuid;
         let RETURN_EVENT = e.params.return_event;
         console.log(DB_API_OBJECT_TYPE, API_OBJECT_ID, "getAllData", RETURN_EVENT_UUID, RETURN_EVENT);
 
         // Insert Into Database
         appDb
-            .getAllData()
+            .getAllData(pageSize, pageNumber, searchParams, dateRange)
             .then(data => {
-                console.log(DB_API_OBJECT_TYPE, RETURN_EVENT_UUID, RETURN_EVENT, travelRequest);
+                console.log(DB_API_OBJECT_TYPE, RETURN_EVENT_UUID, RETURN_EVENT);
                 core.sendEvent(DB_API_OBJECT_TYPE, RETURN_EVENT_UUID, RETURN_EVENT, {
                     "api": JSON.stringify({"result": data, success: true})
                 })
