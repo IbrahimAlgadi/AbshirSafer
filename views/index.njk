@@ -1,104 +1,164 @@
 {% extends './layout/root_layout.njk' %}
-{% block title %} Kashif Report {% endblock %}
+{% block title %} ابشر سفر {% endblock %}
 
 {% block content %}
 
     <!-- /.container-fluid -->
     <div class="container-fluid">
-        <div class="row pt-3">
-            <div class="col-6">
+        <div class="row d-flex justify-content-center align-items-center" style="height: 95vh;">
 
-                <!-- Profile Image -->
-                <div class="card card-primary card-outline">
-                    <div class="card-body box-profile">
-                        <div class="text-center">
-                            <img class="profile-user-img img-fluid img-circle"
-                                 src="../../dist/img/user4-128x128.jpg"
-                                 alt="User profile picture">
-                        </div>
+            <div class="col-md-6 row pt-3">
+                <div class="col-6">
 
-                        <h3 class="profile-username text-center text-black">
-                            Ibrahim Mohammed
-                        </h3>
+                    <!-- Profile Image -->
+                    <div class="card card-primary card-outline">
+                        <div class="card-body box-profile">
 
-                        <p class="text-muted text-center">
-                            Systems Engineer
-                        </p>
+                            <ul class="list-group list-group-unbordered mb-3 mt-0 row">
+                                <li class="list-group-item">
+                                    <a class="float-left">1</a>
+                                    <b class="float-right">رقم الكاميرا</b>
+                                </li>
+                                <li class="list-group-item">
+                                    <a class="float-left ellipsis" style="max-width: 210px">CAM-1-LINE2-PLACE1-IN-LINE3-Line4-line5</a>
+                                    <b class="float-right">اسم الكاميرا</b>
+                                </li>
+                                <li class="list-group-item">
+                                    <a class="float-left">26/06/2024 10:32 PM</a>
+                                    <b class="float-right">وقت االدخول</b>
+                                </li>
+                            </ul>
 
-                        <ul class="list-group list-group-unbordered mb-3">
-                            <li class="list-group-item">
-                                <b>Department</b>
-                                <a class="float-right">Technical Support</a>
-                            </li>
-                            <li class="list-group-item">
-                                <b>ID</b>
-                                <a class="float-right">123456799829321</a>
-                            </li>
-                            <li class="list-group-item">
-                                <b>Mobile</b>
-                                <a class="float-right">+971544203125</a>
-                            </li>
-                            <li class="list-group-item">
-                                <b>Gender</b>
-                                <a class="float-right">Male</a>
-                            </li>
-                        </ul>
-
-                    </div>
-                    <!-- /.card-body -->
-                </div>
-                <!-- /.card -->
-
-            </div>
-            <!-- /.col -->
-            <div class="col-6">
-
-                <!-- Profile Image -->
-                <div class="card card-primary card-outline">
-                    <div class="card-body box-profile">
-                        <div class="row">
-                            <div class="col-12">
-                                <img 
-                                    class="img-fluid"
-                                    src="/assets/car_img.jpg"
-                                    style="height: 150px"
-                                    alt="User profile picture"
-                                >
+                            <div class="text-muted text-center">
+                                <!-- small box -->
+                                <div class="small-box bg-success">
+                                    <div class="inner">
+                                        <br>
+                                        <h3 id="totalDetectionSum">فتح</h3>
+                                        <p>حالة البوابة</p>
+                                        {# <h4>فتح</h4> #}
+                                        <br>
+                                    </div>
+                                </div>
                             </div>
+
                         </div>
-
-                        <ul class="list-group list-group-unbordered mb-3 mt-3">
-                            <li class="list-group-item">
-                                <b>Plate</b>
-                                <a class="float-right">75034-9-AD</a>
-                            </li>
-                            <li class="list-group-item">
-                                <b>Make</b>
-                                <a class="float-right">Vehicle Make</a>
-                            </li>
-                            <li class="list-group-item">
-                                <b>Model</b>
-                                <a class="float-right">Vehcile Model</a>
-                            </li>
-                            <li class="list-group-item">
-                                <b>Color</b>
-                                <a class="float-right">White</a>
-                            </li>
-                        </ul>
-
-                        <a href="#" class="btn btn-success btn-block">
-                            <b>Authorized</b>
-                        </a>
+                        <!-- /.card-body -->
                     </div>
-                    <!-- /.card-body -->
-                </div>
-                <!-- /.card -->
+                    <!-- /.card -->
 
+                </div>
+                <!-- /.col -->
+                <div class="col-6">
+
+                    <!-- Profile Image -->
+                    <div class="card card-primary card-outline">
+                        <div class="card-body box-profile">
+
+                            <form>
+
+                                <ul class="list-group list-group-unbordered mb-3 mt-0" dir="rtl">
+                                    <li class="list-group-item row" >
+                                        {# <b>Plate</b> #}
+                                        {# <a class="float-right">75034-9-AD</a> #}
+                                        <div class="col-12 row">
+                                            <b>رقم اللوحة</b>
+                                            <div class="col-12 mb-1">
+                                                <input class="form-control" placeholder="الارقام" type="number" style="width: 100%">
+                                            </div>
+                                            <div class="col-12">
+                                                <input class="form-control" placeholder="الحروف العربيه" type="text" style="width: 100%">
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li class="list-group-item row">
+                                        <div class="col-12 row">
+                                            <b>نوع اللوحة</b>
+                                            <div class="col-12">
+                                                <select class="form-control" style="width: 100%">
+                                                    <option>لوحة خاصه</option>
+                                                    <option>لوحة نقل خاصه</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li class="list-group-item row">
+                                        <div class="col-12 row">
+                                            <b>لديه مقطورة خاصة</b>
+                                            <div class="col-12">
+                                                <select class="form-control" style="width: 100%">
+                                                    <option>نعم</option>
+                                                    <option>لا</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </li>
+                                </ul>
+
+                            </form>
+
+                            <a href="#" class="btn btn-primary btn-block mb-2">
+                                <b>فحص يدوي</b>
+                            </a>
+
+                        </div>
+                        <!-- /.card-body -->
+                    </div>
+                    <!-- /.card -->
+
+                </div>
+                <!-- /.col -->
             </div>
-            <!-- /.col -->
+            <!-- /.row -->
+
         </div>
-        <!-- /.row -->
     </div>
     <!-- /.container-fluid -->
+
+{% endblock %}
+
+{% block scripts %}
+
+    <script>
+
+        let socket;
+
+        function connectWebsocket() {
+
+            socket = new WebSocket(`ws://${location.host}`);
+
+            socket.addEventListener('open', (event) => {
+                console.log('WebSocket connection opened:', event);
+            });
+
+            socket.addEventListener('message', (event) => {
+                let data = JSON.parse(event.data);
+                console.log('Received message:', data);
+                /*
+                // kashifErrorHappened
+                if (data.event === "getVehicleLegalStatusDetailInfoByPlate") {
+                    setCarPlate(data.data.car_plate);
+                    displayKashifInfo(data.data.kashif_resp);
+                }
+
+                if (data.event === "kashifErrorHappened") {
+                    new Toast({message: `${data.data.error}`, type: 'danger'});
+                }
+                */
+            });
+
+            socket.addEventListener('close', (event) => {
+                console.log('WebSocket connection closed:', event);
+                setTimeout(() => {
+                    console.log("[*] Trying to reconnect socket");
+                    // Call function again
+                    connectWebsocket();
+                }, 2000);
+            });
+
+        }
+
+        connectWebsocket();
+    </script>
 
 {% endblock %}

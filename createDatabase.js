@@ -1,111 +1,125 @@
 const { Client } = require('pg');
 
-// Function to create database
-async function createDatabase() {
-  const client = new Client({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'postgres', // Connect to default database
-    password: 'postgres',
-    port: 5432,
-  });
+const CREATE_DB = false;
 
-  try {
-    await client.connect();
+class AppDatabase {
+  DB_USER = "postgres";
+  DB_PASSWORD = "postgres";
+  DB_HOST = "localhost";
+  DB_POSTGRES = "postgres";
+  DB_APP = "vehicle_travel_request_db";
 
-    // Create the new database
-    await client.query('CREATE DATABASE kashif_db;');
-    console.log('Database created.');
+  constructor() { }
 
-  } catch (err) {
-    console.error('Error creating database:', err);
-  } finally {
-    await client.end();
+  // Function to create database
+  async createDatabase() {
+    const client = new Client({
+      user: this.DB_USER,
+      host: this.DB_HOST,
+      database: this.DB_POSTGRES, // Connect to default database
+      password: this.DB_PASSWORD,
+      port: 5432,
+    });
+
+    try {
+      await client.connect();
+
+      // Create the new database
+      await client.query(`CREATE DATABASE ${this.DB_APP};`);
+      console.log('Database created.');
+
+    } catch (err) {
+
+      console.error('Error creating database:', err);
+    } finally {
+      await client.end();
+    }
   }
-}
 
-// Function to grant privileges
-async function grantPrivileges() {
-  const client = new Client({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'kashif_db', // Connect to the new database
-    password: 'postgres',
-    port: 5432,
-  });
+  // Function to grant privileges
+  async grantPrivileges() {
+    const client = new Client({
+      user: this.DB_USER,
+      host: this.DB_HOST,
+      database: this.DB_APP, // Connect to the new database
+      password: this.DB_PASSWORD,
+      port: 5432,
+    });
 
-  try {
-    await client.connect();
+    try {
+      await client.connect();
 
-    // Grant privileges
-    await client.query('GRANT ALL PRIVILEGES ON DATABASE kashif_db TO postgres;');
-    console.log('Privileges granted.');
+      // Grant privileges
+      await client.query(`GRANT ALL PRIVILEGES ON DATABASE ${this.DB_APP} TO postgres;`);
+      console.log('Privileges granted.');
 
-  } catch (err) {
-    console.error('Error granting privileges:', err);
-  } finally {
-    await client.end();
+    } catch (err) {
+      console.error('Error granting privileges:', err);
+    } finally {
+      await client.end();
+    }
   }
-}
 
-// Function to grant privileges
-async function createTables() {
-  const client = new Client({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'kashif_db', // Connect to the new database
-    password: 'postgres',
-    port: 5432,
-  });
+  // Function to grant privileges
+  async createTables() {
+    const client = new Client({
+      user: this.DB_USER,
+      host: this.DB_HOST,
+      database: this.DB_APP, // Connect to the new database
+      password: this.DB_PASSWORD,
+      port: 5432,
+    });
 
-  try {
-    await client.connect();
+    try {
+      await client.connect();
 
-    // Grant privileges
-    await client.query(`
--- Create vehicle table
-CREATE TABLE vehicle (
+      // Grant privileges
+      await client.query(`
+
+-- Create request_source Table
+CREATE TABLE request_source (
     id SERIAL PRIMARY KEY,
-    transaction_id VARCHAR NOT NULL,
-    code VARCHAR NOT NULL,
-    message VARCHAR NOT NULL,
-    vehicle_primary_color VARCHAR NOT NULL,
-    vehicle_secondary_color VARCHAR,
-    vehicle_maker VARCHAR NOT NULL,
-    vehicle_model VARCHAR,
-    vehicle_manufacture_year VARCHAR NOT NULL,
-    vehicle_wanted_status_code VARCHAR NOT NULL,
-    plate_number VARCHAR NOT NULL,
-    plate_type VARCHAR NOT NULL,
-    lpr_id VARCHAR NOT NULL,
-    camera_id VARCHAR NOT NULL,
-    date DATE NOT NULL,
-    time TIME NOT NULL
+    lpr_id VARCHAR(128),
+    lpr_name VARCHAR(255),
+    cam_id VARCHAR(128),
+    cam_name VARCHAR(255)
 );
 
--- Create vehicle_legal_status table
-CREATE TABLE vehicle_legal_status (
+-- Create travel_request Table
+CREATE TABLE travel_request (
     id SERIAL PRIMARY KEY,
-    vehicle_id INTEGER NOT NULL,
-    vehicle_legal_status_code VARCHAR NOT NULL,
-    vehicle_legal_status_ar VARCHAR NOT NULL,
-    vehicle_legal_status_en VARCHAR NOT NULL,
-    FOREIGN KEY (vehicle_id) REFERENCES vehicle(id)
+    request_source_id INTEGER,
+    full_plate_number VARCHAR,
+    action VARCHAR,
+    vehicle_registration_type VARCHAR,
+    vehicle_plate_number VARCHAR,
+    provider_reference_number VARCHAR,
+    has_towing_trailer BOOL,
+    transaction_id VARCHAR,
+    request_date DATE NOT NULL,
+    request_time TIME NOT NULL,
+    FOREIGN KEY (request_source_id) REFERENCES request_source(id)
 );
 
     `);
-    console.log('Tables created.');
+      console.log('Tables created.');
 
-  } catch (err) {
-    console.error('Error granting privileges:', err);
-  } finally {
-    await client.end();
+    } catch (err) {
+      console.error('Error granting privileges:', err);
+    } finally {
+      await client.end();
+    }
   }
+
+
 }
 
-// Execute the functions
-createDatabase()
-  .then(grantPrivileges)
-  .then(createTables)
-  .catch(err => console.error('Error in database setup:', err));
+if (CREATE_DB) {
+  const appDb = new AppDatabase();
+  // Execute the functions
+  appDb.createDatabase()
+    .then(grantPrivileges)
+    .then(createTables)
+    .catch(err => console.error('Error in database setup:', err));
+}
 
