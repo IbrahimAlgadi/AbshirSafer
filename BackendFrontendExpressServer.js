@@ -19,6 +19,7 @@ const uuid = require("uuid");
 
 // VARAIBLES
 let SECUROS_CORE = null;
+let abshirApi = null;
 const port = 8998;
 
 // Databases
@@ -113,6 +114,7 @@ class AbshirAPISender {
             provider_reference_number: travelRequest.providerReferenceNumber,
             has_towing_trailer: travelRequest.hasTowingTrailer,
             transaction_id: travelRequest.transactionId,
+            full_plate_number: travelRequest.full_plate_number,
             request_date: travelRequest.request_date,
             request_time: travelRequest.request_time,
             request_status: travelRequest.request_status,
@@ -132,12 +134,12 @@ class AbshirAPISender {
     }
 
     // getAllData
-    getAllDataDb() {
+    getAllDataDb(pageSize, pageNumber, searchParams, dateRange) {
         return this.senderService(
             this.DB_API_OBJECT_TYPE,
             this.DB_API_OBJECT_ID,
             "getAllData",
-            JSON.stringify({}),
+            JSON.stringify({pageSize, pageNumber, searchParams, dateRange}),
             "getAllDataReturn",
         )
     }
@@ -172,166 +174,22 @@ app.get('/', (req, res) => {
 });
 
 
-// manual_kashif
-app.get('/manual_kashif', (req, res) => {
-    res.render('manual_kashif', {req});
-});
-
-
-app.post('/manual_kashif', (req, res) => {
-    try{
-        // console.log(req.body);
-        let { plateNumbers, arabicLetters, englishLetters, plateType } = req.body;
-        // res.render('manual_kashif', {req});
-
-        let recog_number = `${plateNumbers}${englishLetters}|${arabicLetters}`;
-        let lpr_id = "-";
-        let cameraId = "CAMERA_ID";
-        let date = moment().format('YYYY-MM-DD');
-        let time = moment().format('HH:mm:ss.sss');
-
-        // console.log("[*] Recognized car plate: ", recog_number);
-        let extractedPlate = extractPlateInfo(recog_number);
-        // console.log("[*] Recognized car plate: ", extractPlateInfo(recog_number));
-        plateInfo = {
-            plateType: plateType,
-            plateNumber: extractedPlate.numbers,
-            oldPlateNumber: '',
-            // arabic
-            plateArLetter1: getIndexOrNone(extractedPlate.arabicLetters, 0),
-            plateArLetter2: getIndexOrNone(extractedPlate.arabicLetters, 1),
-            plateArLetter3: getIndexOrNone(extractedPlate.arabicLetters, 2),
-            // english
-            plateEnLetter1: getIndexOrNone(extractedPlate.englishLetters, 0),
-            plateEnLetter2: getIndexOrNone(extractedPlate.englishLetters, 1),
-            plateEnLetter3: getIndexOrNone(extractedPlate.englishLetters, 2)
-        }
-        console.log("[*] Plate Info: ", plateInfo);
-
-        kashefApi.getVehicleLegalStatusDetailInfoByPlate(
-            clientId = CLIENT_ID,
-            cameraId = cameraId,
-            plateInfo
-        ).then((resp) => {
-            
-            // resp['code'] = _.get(resp, 'code');
-            resp['plate_number'] = recog_number;
-            resp['plate_type'] = plateInfo['plateType'];
-            resp['lpr_id'] = lpr_id;
-            resp['camera_id'] = cameraId;
-            resp['date'] = date;
-            resp['time'] = time;
-
-            if (_.get(resp, 'code') === null) {
-                // throw new Error("Got Null Response From Kashif");
-                resp['code'] = 'xxx';
-                resp['transactionId'] = "-";
-                resp['vechiclePrimaryColor'] = "-";
-                resp['vechicleSecondaryColor'] = "-";
-                resp['vehicleMaker'] = "-";
-                resp['vehicleModel'] = "-";
-                resp['vehicleManufactureYear'] = "-";
-                resp['vehicleWantedStatusCode'] = "-";
-                resp['vehicleLegalStatus'] = "-";
-                resp['message'] = 'kashif endpoint request is null';
-                console.log(resp);
-                
-                // Store Un Detected Car To Database Asynchronously
-                storeVehicleData(resp);
-
-                res.json({
-                    success: false, 
-                    "kashif_resp": resp,
-                    "error": `Plate ${recog_number} Error:  Got Not Found Response From Kashif`
-                });   
-            } else {
-                /*
-                vehicleData.plate_number,
-                vehicleData.plate_type,
-                vehicleData.lpr_id,
-                vehicleData.camera_id,
-                vehicleData.date,
-                vehicleData.time,
-                */
-                
-                // Store To Database Asynchronously
-                storeVehicleData(resp);
-
-                // Emmit Kashif Error Message To Clients
-                if(_.get(resp, 'code') === "000") {
-                    res.json({success: true, "kashif_resp": resp});
-                } else {
-                    res.json({
-                        success: true, 
-                        "kashif_resp": resp,
-                        "error": `Plate ${recog_number} Error:  ${_.get(resp, 'message')}`
-                    });        
-                }
-            }
-
-        }).catch((e) => {
-            // console.log(e);
-            res.json({
-                success: false, 
-                "error": `Plate ${recog_number} Error:  Unable to send request to kashif`
-            });
-        });
-    } catch (error) {
-        console.error('Error on /manual_kashif endpoint:', error);
-        res.status(500).send('Internal Server Error');
-    }
-});
-
-
 app.get('/history/data', async (req, res) => {
     try {
+        // console.log(req.query)
         const pageSize = req.query.pageSize || 10; // Default page size
         const pageNumber = req.query.pageNumber || 1; // Default page number
-        const searchQuery = req.query.search || ''; // Default search query
+        const searchParams = req.query.search || {}; // Default search query
         const startDate = req.query.startDate || '';
         const endDate = req.query.endDate || '';
-        // console.log(searchQuery, startDate, endDate);
-
-        const query = `
-            SELECT 
-                v.id,
-                v.transaction_id,
-                v.code,
-                v.message,
-                v.vehicle_primary_color,
-                v.vehicle_secondary_color,
-                v.vehicle_maker,
-                v.vehicle_model,
-                v.vehicle_manufacture_year,
-                v.vehicle_wanted_status_code,
-                v.plate_number,
-                v.plate_type,
-                v.lpr_id,
-                v.camera_id,
-                DATE(v.date),
-                v.time,
-                STRING_AGG(vls.vehicle_legal_status_en, ', ') AS legal_statuses_en,
-                STRING_AGG(vls.vehicle_legal_status_ar, ', ') AS legal_statuses_ar
-            FROM 
-                vehicle v
-            LEFT JOIN 
-                vehicle_legal_status vls ON v.id = vls.vehicle_id
-            WHERE
-                v.plate_number LIKE $1
-                AND (v.date + v.time) BETWEEN TO_TIMESTAMP($2, 'YYYY-MM-DD HH24:MI:SS')
-                AND TO_TIMESTAMP($3, 'YYYY-MM-DD HH24:MI:SS')
-            GROUP BY 
-                v.id
-            ORDER BY 
-                v.id DESC
-            LIMIT 
-                $4 OFFSET $5;
-        `;
-        // console.log(query);
-
-        const result = await pool.query(query, [`%${searchQuery}%`, startDate, endDate, pageSize, (pageNumber - 1) * pageSize]);
-        // console.log(result.rows);
-        res.json(result.rows);
+        let dbDesult = await abshirApi.getAllDataDb(pageSize, pageNumber, searchParams, {startDate, endDate});
+        let parsedDbResult = JSON.parse(dbDesult.params.api);
+        // console.log(parsedDbResult)
+        if (parsedDbResult.success) {
+            res.json(parsedDbResult.result);
+        } else {
+            res.json([]);            
+        }
     } catch (error) {
         console.error('Error on /history/data endpoint:', error);
         res.status(500).send('Internal Server Error');
@@ -342,43 +200,21 @@ app.get('/history/data', async (req, res) => {
 app.get('/history', async (req, res) => {
 
     try {
-        // const pageSize = req.query.pageSize || 10; // Default page size
-        // const pageNumber = req.query.pageNumber || 1; // Default page number
-        // const searchQuery = req.query.search || ''; // Default search query
-
-        const query = `
-            SELECT 
-                v.id,
-                v.transaction_id,
-                v.code,
-                v.message,
-                v.vehicle_primary_color,
-                v.vehicle_secondary_color,
-                v.vehicle_maker,
-                v.vehicle_model,
-                v.vehicle_manufacture_year,
-                v.vehicle_wanted_status_code,
-                v.plate_number,
-                v.plate_type,
-                v.lpr_id,
-                v.camera_id,
-                v.date,
-                v.time,
-                STRING_AGG(vls.vehicle_legal_status_en, ', ') AS legal_statuses_en,
-                STRING_AGG(vls.vehicle_legal_status_ar, ', ') AS legal_statuses_ar
-            FROM 
-                vehicle v
-            LEFT JOIN 
-                vehicle_legal_status vls ON v.id = vls.vehicle_id
-            GROUP BY 
-                v.id
-            ORDER BY 
-                v.id DESC
-        `;
-
-        const result = await pool.query(query, []);
-        // res.json(result.rows);
-        res.render('history', {req, data: result.rows});
+        const pageSize = req.query.pageSize || 10; // Default page size
+        const pageNumber = req.query.pageNumber || 1; // Default page number
+        const searchParams = req.query.search || {}; // Default search query
+        const startDate = req.query.startDate || '';
+        const endDate = req.query.endDate || '';
+        let dbDesult = await abshirApi.getAllDataDb(pageSize, pageNumber, searchParams, {startDate, endDate});
+        let parsedDbResult = JSON.parse(dbDesult.params.api);
+        // console.log(parsedDbResult)
+        // if (parsedDbResult.success) {
+        //     res.json(parsedDbResult.result);
+        // } else {
+        //     res.json([]);            
+        // }
+        // // res.json(result.rows);
+        res.render('history', {req, data: parsedDbResult.result});
     } catch (error) {
         console.error('Error on /history endpoint:', error);
         res.status(500).send('Internal Server Error');
@@ -467,7 +303,7 @@ function getPlateType(inputString) {
 
 securos.connect((core) => {
     SECUROS_CORE = core;
-    const abshirApi = new AbshirAPISender(core);
+    abshirApi = new AbshirAPISender(core);
 
     // Once a car license plate is captured
     core.registerEventHandler(
@@ -526,6 +362,7 @@ securos.connect((core) => {
         let apiResult = JSON.parse(result.params.api);
 
         // Add data to travelRequest
+        travelRequest['full_plate_number'] = recog_number;
         travelRequest['request_date'] = requestTime.format("YYYY/MM/DD");
         travelRequest['request_time'] = requestTime.format("HH:mm:ss");
         travelRequest['request_status'] = apiResult.status;

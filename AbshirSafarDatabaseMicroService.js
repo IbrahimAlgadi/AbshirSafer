@@ -59,7 +59,7 @@ class AppDatabase {
     DB_APP = "vehicle_travel_request_db";
 
     async insertRequestSourceTravelRequest(requestSource, travelRequest) {
-        console.log(requestSource, travelRequest);
+        // console.log(requestSource, travelRequest);
         const client = await pool.connect();
         let res;
 
@@ -221,25 +221,29 @@ class AppDatabase {
         // Add date range filter
         if (dateRange) {
             if (dateRange.startDate) {
-                query += ` AND tr.request_date >= $${paramIndex}`;
+                query += ` AND (tr.request_date + tr.request_time) >= TO_TIMESTAMP($${paramIndex}, 'YYYY-MM-DD HH24:MI:SS') `;
                 params.push(dateRange.startDate);
                 paramIndex++;
             }
             if (dateRange.endDate) {
-                query += ` AND tr.request_date <= $${paramIndex}`;
+                // query += ` AND tr.request_date <= $${paramIndex}`;
+                query += ` AND (tr.request_date + tr.request_time) <= TO_TIMESTAMP($${paramIndex}, 'YYYY-MM-DD HH24:MI:SS') `;
                 params.push(dateRange.endDate);
                 paramIndex++;
             }
         }
 
         // Add pagination
-        query += ` ORDER BY tr.id DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-        params.push(pageSize, pageSize * (pageNumber - 1));
+        query += ` ORDER BY tr.id DESC`;
+        // query += ` ORDER BY tr.id DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+        // params.push(pageSize, pageSize * (pageNumber - 1));
+        console.log(query);
 
         const result = await client.query(query, params);
         
         client.release();
-        return result;
+        // if result.rows
+        return result.rows;
     }
 
 }
@@ -264,13 +268,13 @@ securos.connect(async (core) => {
         let travelRequest = param.travelRequest;
         let RETURN_EVENT_UUID = e.params.return_uuid;
         let RETURN_EVENT = e.params.return_event;
-        console.log(DB_API_OBJECT_TYPE, API_OBJECT_ID, "insertRequestSourceTravelRequest", RETURN_EVENT_UUID, RETURN_EVENT);
+        // console.log(DB_API_OBJECT_TYPE, API_OBJECT_ID, "insertRequestSourceTravelRequest", RETURN_EVENT_UUID, RETURN_EVENT);
 
         // Insert Into Database
         appDb
             .insertRequestSourceTravelRequest(requestSource, travelRequest)
             .then(data => {
-                console.log(DB_API_OBJECT_TYPE, RETURN_EVENT_UUID, RETURN_EVENT, travelRequest);
+                // console.log(DB_API_OBJECT_TYPE, RETURN_EVENT_UUID, RETURN_EVENT, travelRequest);
                 core.sendEvent(DB_API_OBJECT_TYPE, RETURN_EVENT_UUID, RETURN_EVENT, {
                     "api": JSON.stringify({"result": data, success: true})
                 })
@@ -287,6 +291,7 @@ securos.connect(async (core) => {
     core.registerEventHandler(DB_API_OBJECT_TYPE, API_OBJECT_ID, "getAllData", (e) => {
         // console.log(e);
         let param = JSON.parse(e.params.param);
+        console.log(param);
         // Pagination options
         let pageSize = param.pageSize || 10;
         let pageNumber = param.pageNumber || 1;
@@ -303,6 +308,7 @@ securos.connect(async (core) => {
         appDb
             .getAllData(pageSize, pageNumber, searchParams, dateRange)
             .then(data => {
+                // console.log(data);
                 console.log(DB_API_OBJECT_TYPE, RETURN_EVENT_UUID, RETURN_EVENT);
                 core.sendEvent(DB_API_OBJECT_TYPE, RETURN_EVENT_UUID, RETURN_EVENT, {
                     "api": JSON.stringify({"result": data, success: true})

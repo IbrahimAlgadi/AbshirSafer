@@ -1,114 +1,295 @@
-<% layout('layout/root_layout') -%>
-<% block('title', 'Kashif Data'); -%>
+{% extends './layout/root_layout.njk' %}
+{% block title %} ابشر سفر {% endblock %}
 
-<!-- Content Header (Page header) -->
-<div class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1 class="m-0">History</h1>
-            </div><!-- /.col -->
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item">
+{% block content %}
+
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0">History</h1>
+                </div>
+                <!-- /.col -->
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item">
                         search history
                     </li>
-                </ol>
-            </div><!-- /.col -->
-        </div><!-- /.row -->
-    </div><!-- /.container-fluid -->
-</div>
-<!-- /.content-header -->
+                    </ol>
+                </div>
+                <!-- /.col -->
+            </div>
+            <!-- /.row -->
+        </div>
+        <!-- /.container-fluid -->
+    </div>
+    <!-- /.content-header -->
 
-<!-- Main content -->
-<div class="content" id="">
+    <!-- Main content -->
+    <div class="content" id="">
 
-    <div class="col-md-12">
-        <form id="filterForm">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        <!-- Start Date -->
-                        <div class="form-group">
-                            <div class="input-group date" id="startDate" data-target-input="nearest">
-                                <input
+        <div class="col-md-12">
+            <form id="filterForm">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <!-- Start Date -->
+                            <div class="form-group">
+                                <div class="input-group date" id="startDate" data-target-input="nearest">
+                                    <input
                                         type="text"
                                         id="startDateInput"
                                         name="startDate"
                                         class="form-control datetimepicker-input"
-                                        data-target="#startDate"
-                                />
-                                <div
+                                        data-target="#startDate">
+                                    <div
                                         class="input-group-append"
                                         data-target="#startDate"
                                         data-toggle="datetimepicker"
-                                >
-                                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                     >
+                                        <div class="input-group-text">
+                                            <i class="fa fa-calendar"></i>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-3">
-                        <!-- Start Date -->
-                        <div class="form-group">
-                            <div class="input-group date" id="endDate" data-target-input="nearest">
-                                <input
+                        <div class="col-md-3">
+                            <!-- Start Date -->
+                            <div class="form-group">
+                                <div class="input-group date" id="endDate" data-target-input="nearest">
+                                    <input
                                         type="text"
                                         name="endDate"
                                         id="endDateInput"
                                         class="form-control datetimepicker-input"
                                         data-target="#endDate"
-                                />
-                                <div
+/>
+                                    <div
                                         class="input-group-append"
                                         data-target="#endDate"
                                         data-toggle="datetimepicker"
-                                >
-                                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                    >
+                                        <div class="input-group-text">
+                                            <i class="fa fa-calendar"></i>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <input
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <input
                                     type="text"
                                     name="carPlate"
                                     class="form-control"
                                     id="exampleInputEmail1"
                                     placeholder="Enter Car Plate"
-                            >
+                                >
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <button type="submit" class="btn btn-primary">Filter</button>
-                            <button id="exportExcel" type="button" class="btn btn-success">To Excel</button>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-primary">Filter</button>
+                                <button id="exportExcel" type="button" class="btn btn-success">To Excel</button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </form>
-    </div>
-
-    <div class="col-md-12">
-        <div class="card bg-theme">
-
-            <!-- /.card-header -->
-            <div class="card-body">
-
-                <div id="databaseResults"></div>
-
-            </div>
-            <!-- /.card-body -->
-
+            </form>
         </div>
-        <!-- /.card -->
+
+        <div class="col-md-12">
+            <div class="card bg-theme">
+
+                <!-- /.card-header -->
+                <div class="card-body">
+
+                    <div id="databaseResults"></div>
+
+                </div>
+                <!-- /.card-body -->
+
+            </div>
+            <!-- /.card -->
+        </div>
+
     </div>
+    <!-- /.content -->
 
-</div>
-<!-- /.content -->
+{% endblock %}
 
+{% block scripts %}
 
-<% script('res_codes.js') -%>
-<% script('history.js') -%>
+    <script>
+/*
+{
+    lpr_id: '1',
+    lpr_name: 'LPR: Plate Recognizer 1',
+    cam_id: '3',
+    cam_name: 'LPR Cam2',
+    request_source_id: 1,
+    id: 2308,
+    full_plate_number: null,
+    action: 'TRAVEL_REQUEST',
+    vehicle_registration_type: 'PRIVATE',
+    vehicle_plate_number: '5498 ر ص د',
+    provider_reference_number: 'ABC-123-xyz',
+    has_towing_trailer: false,
+    transaction_id: '78343a00-3610-11ef-af03-1b10aaf242e6',
+    request_date: 2024-06-28T20:00:00.000Z,
+    request_time: '16:09:43',
+    request_status: null,
+    open_gate: true
+}
+*/
+        // $('#dataTable').DataTable({
+        //     "paging": true,
+        //     "lengthChange": true,
+        //     "searching": true,
+        //     "ordering": true,
+        //     "info": true,
+        //     "autoWidth": false,
+        //     "responsive": true,
+        //     "buttons": ["excel", "colvis"]
+        // }).buttons().container().appendTo('#dataTable_wrapper .col-md-6:eq(0)');
+        let startDay = moment().startOf('day');
+        let endDay = moment().endOf('day');
+
+        var table = new Tabulator("#databaseResults", {
+            height: "450px",
+            ajaxURL: `/history/data?pageSize=999999999&startDate=${startDay.format('YYYY-MM-DD HH:mm:ss')}&endDate=${endDay.format('YYYY-MM-DD HH:mm:ss')}`,
+            pagination: "local",
+            paginationSize: 12,
+            paginationSizeSelector: [
+                3,
+                6,
+                8,
+                10,
+                12,
+                999999999
+            ],
+            // rowFormatter: function (row) {
+            //      console.log(row.getData())
+            //     vehicle_wanted_status_code = row.getData().vehicle_wanted_status_code
+            //     if (vehicle_wanted_status_code) {
+            //         row.getElement().style.backgroundColor = vehicleWantedStatusMapping[vehicle_wanted_status_code].color;
+            //         row.getElement().style.color = vehicleWantedStatusMapping[vehicle_wanted_status_code].textColor;
+            //     }
+            // },
+            columns: [
+                {
+                    title: "id",
+                    field: "id"
+                }, 
+                {
+                    title: "LPR Name",
+                    field: "lpr_name",
+                    hozAlign: "center"
+                }, 
+                {
+                    title: "Cam Name",
+                    field: "cam_name",
+                    hozAlign: "center"
+                }, 
+                {
+                    title: "Plate Number",
+                    field: "full_plate_number",
+                    hozAlign: "center"
+                }, 
+                {
+                    title: "Registration Type",
+                    field: "vehicle_registration_type",
+                    hozAlign: "left"
+                }, 
+                {
+                    title: "Has Towing Trailer",
+                    field: "has_towing_trailer",
+                    hozAlign: "center"
+                }, 
+                {
+                    title: "Date",
+                    field: "request_date",
+                    hozAlign: "center",
+                    formatter: function (cell, formatterParams) {
+                        var value = cell.getValue();
+                        if (value) {
+                            return moment
+                                .utc(value)
+                                .local()
+                                .format('DD/MM/YYYY');
+                        } else {
+                            return "";
+                        }
+                    }
+                }, 
+                {
+                    title: "Time",
+                    field: "request_time",
+                    hozAlign: "center",
+                    formatter: function (cell, formatterParams) {
+                        var value = cell.getValue();
+                        if (value) {
+                            return moment(value, "HH:mm:ss.SSS").format('HH:mm A');
+                        } else {
+                            return "";
+                        }
+                    }
+                }, 
+                {
+                    title: "Open Gate",
+                    field: "open_gate",
+                    hozAlign: "left",
+                    formatter: function (cell, formatterParams) {
+                        var value = cell.getValue();
+                        if (value) {
+                            return `<small class="badge badge-success">مصرح</small>`;
+                            // return vehicleWantedStatusMapping[value].message;
+                        } else {
+                            return `<small class="badge badge-danger">غير مصرح</small>`;
+                        }
+                    }
+                },
+            ]
+        });
+
+        $(document).ready(() => {
+            // Date and time picker
+            // $('#startDate').val(thisDay.format());
+            $('#startDate').datetimepicker({
+                icons: {
+                    time: 'far fa-clock'
+                },
+                format: 'DD/MM/YYYY HH:mm:ss'
+            });
+            $('#startDateInput').val(startDay.format("DD/MM/YYYY HH:mm:ss"));
+            $('#endDate').datetimepicker({
+                icons: {
+                    time: 'far fa-clock'
+                },
+                format: 'DD/MM/YYYY HH:mm:ss'
+            });
+            $('#endDateInput').val(endDay.format("DD/MM/YYYY HH:mm:ss"));
+        });
+
+        $('#filterForm').submit(function (e) {
+            e.preventDefault();
+            var values = $(this).serializeArray();
+            var formDataObject = {};
+            // Convert the form data array into an object
+            $.each(values, function (i, field) {
+                formDataObject[field.name] = field.value;
+            });
+            // console.log(formDataObject);
+            let startDateFilter = moment($('#startDateInput').val(), "DD/MM/YYYY hh:mm:ss").format("YYYY-MM-DD HH:mm:ss");
+            let endDateFilter = moment($('#endDateInput').val(), "DD/MM/YYYY hh:mm:ss").format("YYYY-MM-DD HH:mm:ss");
+            // console.log(startDateFilter, endDateFilter);
+            table.setData(`/history/data?search=${formDataObject['carPlate']}&&pageSize=999999999&&startDate=${startDateFilter}&endDate=${endDateFilter}`);
+        });
+
+        $('#exportExcel').click(() => {
+            table.download("xlsx", "export.xlsx", {sheetName: "Kashif Export"});
+        });
+    </script>
+{% endblock %}
