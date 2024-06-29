@@ -496,20 +496,13 @@ securos.connect((core) => {
 
         // TODO: Create Request
         let extractedPlate = extractPlateInfo(recog_number);
+        let vehiclePlateNumber = `${extractedPlate.numbers} ${extractedPlate.arabicLetters[0]} ${extractedPlate.arabicLetters[1]} ${extractedPlate.arabicLetters[2]}`;
+        // console.log(extractedPlate);
         // ...
         
         // TODO: Store Result To Database 
         // storeVehicleData(resp);
         // ...
-
-        // TODO: Send Detection to Frontend Via Websocket
-        emitEventToClients(
-            'abshirSafarGateResult',
-            {
-                "car_plate": recog_number,
-                "resp": {}
-            }
-        );
         let requestSource = {
             lpr_id,
             lpr_name,
@@ -520,7 +513,7 @@ securos.connect((core) => {
         let travelRequest = {
             action: VerificationTypeModel.TRAVEL_REQUEST,
             vehicleRegistrationType: VehicleRegistrationTypeModel.PRIVATE,
-            vehiclePlateNumber: recog_number, // 'ه ح ح 123',
+            vehiclePlateNumber: vehiclePlateNumber, // 'ه ح ح 123',
             providerReferenceNumber: 'ABC-123-xyz',
             hasTowingTrailer: false,
             transactionId: uuid.v1()
@@ -529,14 +522,29 @@ securos.connect((core) => {
         // request_date DATE NOT NULL,
         // request_time TIME NOT NULL,
         let result = await abshirApi.verifyTravelRequest(travelRequest);
+        
         let apiResult = JSON.parse(result.params.api);
+
+        // Add data to travelRequest
+        travelRequest['request_date'] = requestTime.format("YYYY/MM/DD");
+        travelRequest['request_time'] = requestTime.format("HH:mm:ss");
+        travelRequest['request_status'] = apiResult.status;
+
         if (apiResult.success) {
             console.log(apiResult);
             console.log("[*] API calling was successful ");
-            travelRequest['request_date'] = requestTime.format("YYYY/MM/DD");
-            travelRequest['request_time'] = requestTime.format("HH:mm:ss");
-            travelRequest['request_status'] = apiResult.status;
+            // TODO: Open Gate
             travelRequest['open_gate'] = true;
+
+            // TODO: Send Detection to Frontend Via Websocket
+            emitEventToClients(
+                'abshirSafarGateResult',
+                {
+                    "success": true,
+                    "travelRequest": travelRequest,
+                }
+            );
+
             // request_status
             let dbDesult = await abshirApi.insertRequestSourceTravelRequestDb(requestSource, travelRequest);
             if (JSON.parse(dbDesult.params.api).success) {
@@ -554,11 +562,11 @@ securos.connect((core) => {
             // }
             
         } else {
+            // TODO: Don't Open Gate
+            travelRequest['open_gate'] = false;
+
             if (apiResult.result.status === 403) {
-                travelRequest['request_date'] = requestTime.format("YYYY/MM/DD");
-                travelRequest['request_time'] = requestTime.format("HH:mm:ss");
-                travelRequest['request_status'] = apiResult.status;
-                travelRequest['open_gate'] = false;
+                
                 // request_status
                 let dbDesult = await abshirApi.insertRequestSourceTravelRequestDb(requestSource, travelRequest);
                 if (JSON.parse(dbDesult.params.api).success) {
@@ -570,6 +578,16 @@ securos.connect((core) => {
             console.error(apiResult);
             console.error("[!] API calling has errors ");
         }
+
+        emitEventToClients(
+            'abshirSafarGateResult',
+            {
+                "success": true,
+                "travelRequest": travelRequest,
+                "requestSource": requestSource,
+                "extractedPlate": extractedPlate
+            }
+        );
 
     }
 
