@@ -46,6 +46,10 @@ class AbshirAPISender {
     // Database Microservice
     DB_API_OBJECT_TYPE = "ABSHIR_DB";
     DB_API_OBJECT_ID = "DB1";
+    // Relay Microservice
+    RELAY_API_OBJECT_TYPE = "RELAY_API";
+    RELAY_API_OBJECT_ID = "1";
+
     
     constructor(core) {
         // console.log(this.API_OBJECT_TYPE);
@@ -136,6 +140,16 @@ class AbshirAPISender {
             "getAllData",
             JSON.stringify({pageSize, pageNumber, searchParams, dateRange}),
             "getAllDataReturn",
+        )
+    }
+
+    relayControlSignal(vehiclePlateNumber, relayId, requestOrigion) {
+        return this.senderService(
+            this.RELAY_API_OBJECT_TYPE,
+            this.RELAY_API_OBJECT_ID,
+            "RELAY_CONTROL",
+            JSON.stringify({vehiclePlateNumber, relayId, requestOrigion}),
+            "RELAY_CONTROL_RETURN",
         )
     }
 
@@ -236,6 +250,8 @@ app.post('/manual', async (req, res) => {
             // TODO: Open Gate
             travelRequest['open_gate'] = true;
             insertToDb = true;
+            // TODO: Control Relay
+            abshirApi.relayControlSignal(vehiclePlateNumber, camera_id, requestOrigion.LPR);
         } else {
             // TODO: Don't Open Gate
             travelRequest['open_gate'] = false;
@@ -478,6 +494,8 @@ securos.connect((core) => {
             // TODO: Open Gate
             travelRequest['open_gate'] = true;
             insertToDb = true;
+            // TODO: Relay Control Signal
+            abshirApi.relayControlSignal(vehiclePlateNumber, camera_id, requestOrigion.LPR);
         } else {
             // TODO: Don't Open Gate
             travelRequest['open_gate'] = false;
