@@ -23,12 +23,12 @@ const pool = new Pool({
 });
 
 /**
- -- Create request_source Table
+-- Create request_source Table
 CREATE TABLE request_source (
     id SERIAL PRIMARY KEY,
-    lpr_id VARCHAR(128),
+    lpr_id VARCHAR(128) UNIQUE,
     lpr_name VARCHAR(255),
-    cam_id VARCHAR(128),
+    cam_id VARCHAR(128) UNIQUE,
     cam_name VARCHAR(255)
 );
 
@@ -43,12 +43,14 @@ CREATE TABLE travel_request (
     provider_reference_number VARCHAR,
     has_towing_trailer BOOL,
     transaction_id VARCHAR,
+    request_origion VARCHAR,
     request_date DATE NOT NULL,
     request_time TIME NOT NULL,
     request_status VARCHAR,
     open_gate BOOL,
     FOREIGN KEY (request_source_id) REFERENCES request_source(id)
 );
+
  */
 
 class AppDatabase {
@@ -112,6 +114,7 @@ class AppDatabase {
                 provider_reference_number,
                 has_towing_trailer,
                 transaction_id,
+                request_origion,
                 request_date,
                 request_time,
                 request_status,
@@ -128,7 +131,8 @@ class AppDatabase {
                 $9,
                 $10,
                 $11,
-                $12   
+                $12,
+                $13 
             ) RETURNING (
                 id, 
                 request_source_id, 
@@ -139,6 +143,7 @@ class AppDatabase {
                 provider_reference_number,
                 has_towing_trailer,
                 transaction_id,
+                request_origion,
                 request_date,
                 request_time,
                 request_status,
@@ -156,6 +161,7 @@ class AppDatabase {
                     travelRequest.provider_reference_number,
                     travelRequest.has_towing_trailer,
                     travelRequest.transaction_id,
+                    travelRequest.request_origion,
                     travelRequest.request_date,
                     travelRequest.request_time,
                     travelRequest.request_status,
@@ -193,6 +199,7 @@ class AppDatabase {
                 tr.provider_reference_number,
                 tr.has_towing_trailer,
                 tr.transaction_id,
+                tr.request_origion,
                 tr.request_date,
                 tr.request_time,
                 tr.request_status,

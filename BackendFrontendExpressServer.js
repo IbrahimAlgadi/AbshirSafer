@@ -32,6 +32,12 @@ const VerificationTypeModel = {
     TOLL_FEE: "TOLL_FEE",
     INSURANCE: "INSURANCE"
 };
+const requestOrigion = {
+    N_A: "N_A",
+    MANUAL: "MANUAL",
+    LPR: "LPR"
+}
+
 class AbshirAPISender {
     // API Microservice
     API_OBJECT_TYPE = "ABSHIR_API";
@@ -94,7 +100,7 @@ class AbshirAPISender {
     }
 
     // insertRequestSourceTravelRequest
-    insertRequestSourceTravelRequestDb(requestSource, travelRequest) {
+    insertRequestSourceTravelRequestDb(requestSource, travelRequest, request_origion=requestOrigion.N_A) {
         travelRequest = {
             action: travelRequest.action,
             vehicle_registration_type: travelRequest.vehicleRegistrationType,
@@ -103,6 +109,7 @@ class AbshirAPISender {
             has_towing_trailer: travelRequest.hasTowingTrailer,
             transaction_id: travelRequest.transactionId,
             full_plate_number: travelRequest.full_plate_number,
+            request_origion,
             request_date: travelRequest.request_date,
             request_time: travelRequest.request_time,
             request_status: travelRequest.request_status,
@@ -220,47 +227,38 @@ app.post('/manual', async (req, res) => {
         travelRequest['request_date'] = requestTime.format("YYYY/MM/DD");
         travelRequest['request_time'] = requestTime.format("HH:mm:ss");
         travelRequest['request_status'] = apiResult.status;
+        // If the proccess of inserting record to database is allowed
+        let insertToDb = false;
 
         if (apiResult.success) {
             // console.log(apiResult);
             console.log("[*] API calling was successful ");
             // TODO: Open Gate
             travelRequest['open_gate'] = true;
-
-            // request_status
-            let dbDesult = await abshirApi.insertRequestSourceTravelRequestDb(requestSource, travelRequest);
-            if (JSON.parse(dbDesult.params.api).success) {
-                console.log("[+] Insert DB was successful");
-            } else {
-                console.error("[!] Insert has errors");
-            }
-            
+            insertToDb = true;
         } else {
             // TODO: Don't Open Gate
             travelRequest['open_gate'] = false;
-
             if (apiResult.result.status === 403) {
-                // request_status
-                let dbDesult = await abshirApi.insertRequestSourceTravelRequestDb(requestSource, travelRequest);
-                if (JSON.parse(dbDesult.params.api).success) {
-                    console.log("[+] Insert DB was successful");
-                } else {
-                    console.error("[!] Insert has errors");
-                }
+                insertToDb = true;
             }
             console.error(apiResult);
             console.error("[!] API calling has errors ");
         }
 
-        emitEventToClients(
-            'abshirSafarGateResult',
-            {
-                "success": true,
-                "travelRequest": travelRequest,
-                "requestSource": requestSource,
-                "extractedPlate": extractedPlate
+        // insert to database if allowed
+        if (insertToDb) {
+            let dbDesult = await abshirApi.insertRequestSourceTravelRequestDb(
+                requestSource, 
+                travelRequest, 
+                request_origion=requestOrigion.MANUAL
+            );
+            if (JSON.parse(dbDesult.params.api).success) {
+                console.log("[+] Insert DB was successful");
+            } else {                
+                console.error("[!] Insert has errors");
             }
-        );
+        }
 
         res.json({
             "success": true,
@@ -471,54 +469,37 @@ securos.connect((core) => {
         travelRequest['request_date'] = requestTime.format("YYYY/MM/DD");
         travelRequest['request_time'] = requestTime.format("HH:mm:ss");
         travelRequest['request_status'] = apiResult.status;
+        // If the proccess of inserting record to database is allowed
+        let insertToDb = false;
 
         if (apiResult.success) {
-            console.log(apiResult);
+            // console.log(apiResult);
             console.log("[*] API calling was successful ");
             // TODO: Open Gate
             travelRequest['open_gate'] = true;
-
-            // TODO: Send Detection to Frontend Via Websocket
-            emitEventToClients(
-                'abshirSafarGateResult',
-                {
-                    "success": true,
-                    "travelRequest": travelRequest,
-                }
-            );
-
-            // request_status
-            let dbDesult = await abshirApi.insertRequestSourceTravelRequestDb(requestSource, travelRequest);
-            if (JSON.parse(dbDesult.params.api).success) {
-                console.log("[+] Insert DB was successful");
-            } else {
-                console.error("[!] Insert has errors");
-            }
-
-            // getAllDataDb()
-            // dbDesult = JSON.parse((await abshirApi.getAllDataDb()).params.api);
-            // if (dbDesult.success) {
-            //     console.log("[+] DB: \n", dbDesult.result);
-            // } else {
-            //     console.error("[!] Getting db result error");
-            // }
-            
+            insertToDb = true;
         } else {
             // TODO: Don't Open Gate
             travelRequest['open_gate'] = false;
-
             if (apiResult.result.status === 403) {
-                
-                // request_status
-                let dbDesult = await abshirApi.insertRequestSourceTravelRequestDb(requestSource, travelRequest);
-                if (JSON.parse(dbDesult.params.api).success) {
-                    console.log("[+] Insert DB was successful");
-                } else {
-                    console.error("[!] Insert has errors");
-                }
+                insertToDb = true;
             }
             console.error(apiResult);
             console.error("[!] API calling has errors ");
+        }
+
+        // insert to database if allowed
+        if (insertToDb) {
+            let dbDesult = await abshirApi.insertRequestSourceTravelRequestDb(
+                requestSource, 
+                travelRequest, 
+                request_origion=requestOrigion.LPR
+            );
+            if (JSON.parse(dbDesult.params.api).success) {
+                console.log("[+] Insert DB was successful");
+            } else {              
+                console.error("[!] Insert has errors");
+            }
         }
 
         emitEventToClients(
