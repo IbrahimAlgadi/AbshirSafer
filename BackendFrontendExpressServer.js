@@ -2,15 +2,12 @@
 const securos = require('securos');
 const express = require('express');
 const _ = require('lodash');
-const {Pool} = require('pg');
 const http = require('http');
 const WebSocket = require('ws');
 const moment = require('moment');
-const path = require('path');
+// const path = require('path');
 const bodyParser = require('body-parser');
-const kashefApi = require("kashef_project");
 const nunjucks = require('nunjucks');
-let CLIENT_ID = "$2a$04$6dTQd1ltXWV52kR6lR2B5uzo7qKF3avT3j6TMUeHzZ0ynxV00cLi2";
 let ROOT_DIR = "D:\\ISS\\SA\\1_ZATCA\\1_ABSHIR_SAFAR_INTEGRATION\\abshir_safer"
 const app = express();
 const server = http.createServer(app);
@@ -21,15 +18,6 @@ const uuid = require("uuid");
 let SECUROS_CORE = null;
 let abshirApi = null;
 const port = 8998;
-
-// Databases
-const pool = new Pool({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'kashif_db',
-    port: 5432,
-    password: 'postgres'
-});
 
 /**
  * API Services
@@ -170,7 +158,124 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 // CRUD operations
 app.get('/', (req, res) => {
+    // console.log(req); 
     res.render('index', {req});
+});
+
+app.post('/manual', async (req, res) => {
+    try{
+        // console.log(req.query);
+        // console.log(req.body);
+        let recognizerId = req.query.recognizerId;
+        let cameraId = req.query.cameraId;
+
+        let { 
+                vehicleRegistrationType, 
+                vehiclePlateNumber, 
+                hasTowingTrailer, 
+                plateNumbers,
+                plateArabicLetters
+        } = req.body;
+        // res.render('manual_kashif', {req});
+
+        // Get car number
+        let recog_number = vehiclePlateNumber;
+        let lpr_id = recognizerId;
+        let lpr_obj = await SECUROS_CORE.getObject("LPR_CAM", lpr_id);
+        let lpr_name = lpr_obj.name;
+        let camera_id = cameraId;
+        let camera_obj = await SECUROS_CORE.getObject("CAM", camera_id);
+        let camera_name = camera_obj.name;
+        let requestTime = moment();
+
+        // TODO: Create Request
+        let requestSource = {
+            lpr_id,
+            lpr_name,
+            cam_id: camera_id,
+            cam_name: camera_name
+        };
+        let extractedPlate = {
+            numbers: plateNumbers,
+            arabicLetters: plateArabicLetters
+        }
+        // console.log(requestSource);
+        let travelRequest = {
+            action: VerificationTypeModel.TRAVEL_REQUEST,
+            vehicleRegistrationType,
+            vehiclePlateNumber, // 'ه ح ح 123',
+            providerReferenceNumber: 'ABC-123-xyz',
+            hasTowingTrailer,
+            transactionId: uuid.v1()
+        };
+        // transaction_id VARCHAR,
+        // request_date DATE NOT NULL,
+        // request_time TIME NOT NULL,
+        let result = await abshirApi.verifyTravelRequest(travelRequest);
+        
+        let apiResult = JSON.parse(result.params.api);
+
+        // Add data to travelRequest
+        travelRequest['full_plate_number'] = recog_number;
+        travelRequest['request_date'] = requestTime.format("YYYY/MM/DD");
+        travelRequest['request_time'] = requestTime.format("HH:mm:ss");
+        travelRequest['request_status'] = apiResult.status;
+
+        if (apiResult.success) {
+            // console.log(apiResult);
+            console.log("[*] API calling was successful ");
+            // TODO: Open Gate
+            travelRequest['open_gate'] = true;
+
+            // request_status
+            let dbDesult = await abshirApi.insertRequestSourceTravelRequestDb(requestSource, travelRequest);
+            if (JSON.parse(dbDesult.params.api).success) {
+                console.log("[+] Insert DB was successful");
+            } else {
+                console.error("[!] Insert has errors");
+            }
+            
+        } else {
+            // TODO: Don't Open Gate
+            travelRequest['open_gate'] = false;
+
+            if (apiResult.result.status === 403) {
+                // request_status
+                let dbDesult = await abshirApi.insertRequestSourceTravelRequestDb(requestSource, travelRequest);
+                if (JSON.parse(dbDesult.params.api).success) {
+                    console.log("[+] Insert DB was successful");
+                } else {
+                    console.error("[!] Insert has errors");
+                }
+            }
+            console.error(apiResult);
+            console.error("[!] API calling has errors ");
+        }
+
+        emitEventToClients(
+            'abshirSafarGateResult',
+            {
+                "success": true,
+                "travelRequest": travelRequest,
+                "requestSource": requestSource,
+                "extractedPlate": extractedPlate
+            }
+        );
+
+        res.json({
+            "success": true,
+            "travelRequest": travelRequest,
+            "requestSource": requestSource,
+            "extractedPlate": extractedPlate
+        });
+
+    } catch (error) {
+        console.error('[!!] Error on /manual endpoint:', error);
+        res.status(500).json({
+            "success": false,
+            "message": "Internal Server Error",
+        });
+    }
 });
 
 

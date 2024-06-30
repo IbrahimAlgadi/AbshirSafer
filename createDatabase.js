@@ -96,6 +96,7 @@ CREATE TABLE travel_request (
     provider_reference_number VARCHAR,
     has_towing_trailer BOOL,
     transaction_id VARCHAR,
+    request_origion VARCHAR,
     request_date DATE NOT NULL,
     request_time TIME NOT NULL,
     request_status VARCHAR,

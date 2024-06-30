@@ -55,7 +55,7 @@
                     <div class="card card-primary card-outline" style="height: 430px;">
                         <div class="card-body box-profile">
 
-                            <form>
+                            <form id="manualSearchForm">
 
                                 <ul class="list-group list-group-unbordered mb-3 mt-0" dir="rtl">
                                     <li class="list-group-item row" >
@@ -66,6 +66,7 @@
                                             <div class="col-12 mb-1">
                                                 <input 
                                                     id="plateNumbers"
+                                                    name="plateNumbers"
                                                     class="form-control" 
                                                     placeholder="الارقام" 
                                                     type="number" 
@@ -74,10 +75,13 @@
                                             <div class="col-12">
                                                 <input 
                                                     id="plateArabicLetters" 
+                                                    name="plateArabicLetters"
                                                     class="form-control" 
                                                     placeholder="الحروف العربيه" 
                                                     type="text" 
-                                                    style="width: 100%">
+                                                    style="width: 100%"
+                                                    data-inputmask='"mask": "x_x_x"' 
+                                                    data-mask>
                                             </div>
                                         </div>
                                     </li>
@@ -85,7 +89,7 @@
                                         <div class="col-12 row">
                                             <b>نوع اللوحة</b>
                                             <div class="col-12">
-                                                <select id="plateType" class="form-control" style="width: 100%">
+                                                <select id="plateType" name="vehicleRegistrationType" class="form-control" style="width: 100%">
                                                     <option value="PRIVATE_TRANSPORT">لوحة نقل خاصه</option>
                                                     <option value="PRIVATE">لوحة خاصه</option>
                                                 </select>
@@ -96,7 +100,7 @@
                                         <div class="col-12 row">
                                             <b>لديه مقطورة خاصة</b>
                                             <div class="col-12">
-                                                <select id="hasTowingTrailer" class="form-control" style="width: 100%">
+                                                <select id="hasTowingTrailer" name="hasTowingTrailer" class="form-control" style="width: 100%">
                                                     <option value="TRUE">نعم</option>
                                                     <option value="FALSE">لا</option>
                                                 </select>
@@ -105,11 +109,11 @@
                                     </li>
                                 </ul>
 
-                            </form>
+                                <button type="submit" href="#" class="btn btn-primary btn-block mb-2">
+                                    <b>فحص يدوي</b>
+                                </button>
 
-                            <a href="#" class="btn btn-primary btn-block mb-2">
-                                <b>فحص يدوي</b>
-                            </a>
+                            </form>
 
                         </div>
                         <!-- /.card-body -->
@@ -130,47 +134,52 @@
 {% block scripts %}
 
     <script>
+        function getQueryParams(url) {
+            let params = {};
+            let parser = document.createElement('a');
+            parser.href = url;
+            let query = parser
+                .search
+                .substring(1);
+            let vars = query.split('&');
+            for (let i = 0; i < vars.length; i++) {
+                let pair = vars[i].split('=');
+                params[pair[0]] = decodeURIComponent(pair[1]);
+            }
+            return params;
+        }
+        let url = document.location.href;
+        // Get the query parameters
+        let queryParams = getQueryParams(url);
+        // Extract the specific parameters
+        let recognizerId = queryParams['recognizerId'];
+        let cameraId = queryParams['cameraId'];
+    </script>
+
+    <script>
+        function formatArabicSpecialText(text) {
+            // Remove non-Arabic letters
+            text = text.replace(/[^ء-ي\s]/g, '');
+            // Remove all existing spaces
+            text = text.replace(/\s/g, '');
+            // Then add spaces between Arabic letters
+            text = text
+                .replace(/([\u0621-\u064A])/g, '$1 ')
+                .trim();
+            return text
+        }
+        function handleInput(e) {
+            e.target.value = formatArabicSpecialText(e.target.value);
+        }
+        $('#plateArabicLetters').on('input', handleInput);
+        $('#plateArabicLetters').on('change', handleInput);
+    </script>
+
+    <script>
 
         let socket;
 
-        function connectWebsocket() {
-
-            socket = new WebSocket(`ws://${location.host}`);
-
-            socket.addEventListener('open', (event) => {
-                console.log('WebSocket connection opened:', event);
-            });
-            /**
-{
-    "event": "abshirSafarGateResult",
-    "data": {
-        "success": true,
-        "travelRequest": {
-            "action": "TRAVEL_REQUEST",
-            "vehicleRegistrationType": "PRIVATE",
-            "vehiclePlateNumber": "undefined م ص ر",
-            "providerReferenceNumber": "ABC-123-xyz",
-            "hasTowingTrailer": false,
-            "transactionId": "ff6e9bb0-3605-11ef-878c-8342d48e6239",
-            "request_date": "2024/06/29",
-            "request_time": "14:54:45",
-            "open_gate": false
-        },
-        "requestSource": {
-            "lpr_id": "1",
-            "lpr_name": "LPR: Plate Recognizer 1",
-            "cam_id": "3",
-            "cam_name": "LPR Cam2"
-        },
-        "extractedPlate": {
-            "numbers": "8988",
-            "arabicLetters": "مصر",
-            "englishLetters": "ZXR"
-        }
-    }
-}
-            */
-
+        function displayGateResultInfo(travelRequest, requestSource, extractedPlate) {
             let openGateBg = $('#openGateBg');
             let openGateStatus = $('#openGateStatus');
             let enterDateTime = $('#enterDateTime');
@@ -181,40 +190,53 @@
             let plateArabicLetters = $('#plateArabicLetters');
             let plateType = $('#plateType');
             let hasTowingTrailer = $('#hasTowingTrailer');
-            
+
+            plateNumbers.val(extractedPlate.numbers);
+            plateArabicLetters.val(formatArabicSpecialText(extractedPlate.arabicLetters));
+            plateType.val(travelRequest.vehicleRegistrationType);
+            hasTowingTrailer.val(
+                travelRequest.hasTowingTrailer
+                ? "TRUE"
+                : "FALSE");
+
+            enterDateTime.html(`${travelRequest.request_date} ${travelRequest.request_time}`);
+            cameraName.html(requestSource.cam_name);
+            cameraId.html(requestSource.cam_id);
+
+            if (travelRequest.open_gate === true) {
+                openGateBg.removeClass('bg-info');
+                openGateBg.removeClass('bg-danger');
+
+                openGateBg.addClass('bg-success');
+                openGateStatus.html('مصرح')
+            } else {
+                openGateBg.removeClass('bg-info');
+                openGateBg.removeClass('bg-success');
+
+                openGateBg.addClass('bg-danger');
+                openGateStatus.html('غير مصرح')
+            }
+        }
+
+        function connectWebsocket() {
+
+            socket = new WebSocket(`ws://${location.host}`);
+
+            socket.addEventListener('open', (event) => {
+                console.log('WebSocket connection opened:', event);
+            });
 
             socket.addEventListener('message', (event) => {
                 let data = JSON.parse(event.data);
                 console.log('Received message:', data);
+
                 if (data.event === "abshirSafarGateResult") {
 
                     let travelRequest = data.data.travelRequest;
                     let requestSource = data.data.requestSource;
                     let extractedPlate = data.data.extractedPlate;
-                    
-                    plateNumbers.val(extractedPlate.numbers);
-                    plateArabicLetters.val(extractedPlate.arabicLetters);
-                    plateType.val(travelRequest.vehicleRegistrationType);
-                    hasTowingTrailer.val(travelRequest.hasTowingTrailer ? "TRUE": "FALSE");
 
-                    enterDateTime.html(`${travelRequest.request_date} ${travelRequest.request_time}`);
-                    cameraName.html(requestSource.cam_name);
-                    cameraId.html(requestSource.cam_id);
-
-
-                    if (travelRequest.open_gate === true) {
-                        openGateBg.removeClass('bg-info');
-                        openGateBg.removeClass('bg-danger');
-
-                        openGateBg.addClass('bg-success');
-                        openGateStatus.html('مصرح')
-                    } else {
-                        openGateBg.removeClass('bg-info');
-                        openGateBg.removeClass('bg-success');
-
-                        openGateBg.addClass('bg-danger');
-                        openGateStatus.html('غير مصرح')
-                    }
+                    displayGateResultInfo(travelRequest, requestSource, extractedPlate);
 
                 }
                 /*
@@ -242,6 +264,80 @@
         }
 
         connectWebsocket();
+    </script>
+
+    <script>
+        $('#manualSearchForm').submit(function (e) {
+            e.preventDefault();
+            var values = $(this).serializeArray();
+            var formDataObject = {};
+            // Convert the form data array into an object
+            $.each(values, function (i, field) {
+                formDataObject[field.name] = field.value;
+            });
+            console.log(formDataObject);
+            let plateNumbers = formDataObject["plateNumbers"];
+            let plateArabicLetters = formDataObject["plateArabicLetters"];
+
+            let vehiclePlateNumber = `${plateNumbers} ${plateArabicLetters}`;
+            formDataObject["vehiclePlateNumber"] = vehiclePlateNumber;
+
+            // $("#accordion").waitMe({});
+            // $("#accordion").waitMe({});
+
+            $.ajax({
+                type: 'POST',
+                url: `/manual?recognizerId=${recognizerId}&cameraId=${cameraId}`,
+                data: formDataObject,
+                success: function (response) {
+                    console.log('Response:', response);
+                    try {
+                        if (response.success) {
+                            let travelRequest = response.travelRequest;
+                            let requestSource = response.requestSource;
+                            let extractedPlate = response.extractedPlate;
+
+                            displayGateResultInfo(travelRequest, requestSource, extractedPlate);
+                        } else {
+                            console.log("[*] response error");
+                            /* Toastify({
+                                text: `${response.error}`, duration: 5000, // Duration in milliseconds
+                                close: true, // Show a close button
+                                gravity: "bottom", // "top" or "bottom"
+                                position: "center", // "left", "center" or "right"
+                                backgroundColor: "linear-gradient(to right, #dc3545, #c59196)", // Green gradient background
+                                stopOnFocus: true, // Stop timeout on focus
+                            }).showToast();
+                            displayKashifInfo({});*/
+                        }
+                        // $("#accordion").waitMe("hide");
+                    } catch (e) {
+                        console.log("[*] Error parsing the response");
+                        /* Toastify({
+                            text: "Error parsing the response", duration: 3000, // Duration in milliseconds
+                            close: true, // Show a close button
+                            gravity: "top", // "top" or "bottom"
+                            position: "center", // "left", "center" or "right"
+                            backgroundColor: "linear-gradient(to right, #dc3545, #c59196)", // Green gradient background
+                            stopOnFocus: true, // Stop timeout on focus
+                        }).showToast();
+                        $("#accordion").waitMe("hide");*/
+                    }
+                },
+                error: function (error) {
+                    console.log('Error:', error);
+                    /*Toastify({
+                        text: `Request error`, duration: 3000, // Duration in milliseconds
+                        close: true, // Show a close button
+                        gravity: "top", // "top" or "bottom"
+                        position: "center", // "left", "center" or "right"
+                        backgroundColor: "linear-gradient(to right, #dc3545, #c59196)", // Green gradient background
+                        stopOnFocus: true, // Stop timeout on focus
+                    }).showToast();
+                    $("#accordion").waitMe("hide");*/
+                }
+            });
+        });
     </script>
 
 {% endblock %}
