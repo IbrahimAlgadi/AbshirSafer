@@ -23,6 +23,7 @@ const pool = new Pool({
 });
 
 /**
+
 -- Create request_source Table
 CREATE TABLE request_source (
     id SERIAL PRIMARY KEY,
@@ -244,7 +245,7 @@ class AppDatabase {
         query += ` ORDER BY tr.id DESC`;
         // query += ` ORDER BY tr.id DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
         // params.push(pageSize, pageSize * (pageNumber - 1));
-        console.log(query);
+        // console.log(query);
 
         const result = await client.query(query, params);
         
@@ -275,7 +276,7 @@ securos.connect(async (core) => {
         let travelRequest = param.travelRequest;
         let RETURN_EVENT_UUID = e.params.return_uuid;
         let RETURN_EVENT = e.params.return_event;
-        // console.log(DB_API_OBJECT_TYPE, API_OBJECT_ID, "insertRequestSourceTravelRequest", RETURN_EVENT_UUID, RETURN_EVENT);
+        console.log(DB_API_OBJECT_TYPE, API_OBJECT_ID, "insertRequestSourceTravelRequest", RETURN_EVENT_UUID, RETURN_EVENT);
 
         // Insert Into Database
         appDb

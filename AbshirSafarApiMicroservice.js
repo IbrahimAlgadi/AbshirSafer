@@ -1,20 +1,34 @@
 const axios = require('axios');
 const uuid = require('uuid');
 const securos = require("securos");
+// jose
+const { generateKeyPair, exportJWK, importJWK, EncryptJWT, jwtDecrypt, SignJWT, jwtVerify } = require('jose');
+const fs = require('fs');
+const path = require('path');
+
+
+// Algorithms
+const JWE_ALGORITHM = 'RSA-OAEP';
+const JWE_ENCRYPTION_ALGORITHM = 'A256CBC-HS512';
+const JWS_ALGORITHM = 'RS256';
+
 
 API_OBJECT_TYPE = "ABSHIR_API";
 API_OBJECT_ID = "1";
+
 
 VehicleRegistrationTypeModel = {
     PRIVATE: "PRIVATE",
     PRIVATE_TRANSPORT: "PRIVATE_TRANSPORT"
 };
 
+
 VerificationTypeModel = {
     TRAVEL_REQUEST: "TRAVEL_REQUEST",
     TOLL_FEE: "TOLL_FEE",
     INSURANCE: "INSURANCE"
 };
+
 
 // Error handling function
 const handleApiError = (error) => {
@@ -122,6 +136,94 @@ class AbsherSafarAPI {
 
     }
 
+    // Generate RSA Key Pair
+    async generateRSAKeyPair(algorithm, keyPath) {
+        const { publicKey, privateKey } = await generateKeyPair(algorithm, { modulusLength: 2048 });
+        // console.log("-------------------");
+        // console.log("Public Key: \n", JSON.stringify(publicKey));
+        // console.log("-------------------");
+        // console.log("Private Key: \n", JSON.stringify(privateKey));
+        // console.log("-------------------");
+        const exportedPublicKey = await exportJWK(publicKey);
+        const exportedPrivateKey = await exportJWK(privateKey);
+
+        // Save the keys to files
+        fs.writeFileSync(path.join(__dirname, `${keyPath}_public_key.json`), JSON.stringify(exportedPublicKey));
+        fs.writeFileSync(path.join(__dirname, `${keyPath}_private_key.json`), JSON.stringify(exportedPrivateKey));
+    };
+
+    // Encrypt a Payload
+    async encryptPayload(payload, publicKeyPath) {
+        const publicKey = JSON.parse(fs.readFileSync(path.join(__dirname, `${publicKeyPath}_public_key.json`), 'utf8'));
+        const importedPublicKey = await importJWK(publicKey, JWE_ALGORITHM);
+
+        const encryptedJWT = await new EncryptJWT(payload)
+            .setProtectedHeader({ alg: JWE_ALGORITHM, enc: JWE_ENCRYPTION_ALGORITHM })
+            .setIssuedAt()
+            .setExpirationTime('2h')
+            .encrypt(importedPublicKey);
+
+        console.log("-------------------");
+        console.log("encryptedJWT: \n", encryptedJWT)
+        console.log("-------------------");
+
+        return encryptedJWT;
+    };
+
+    // Decrypt the Payload
+    async decryptPayload(encryptedJWT, privateKeyPath) {
+        const privateKey = JSON.parse(fs.readFileSync(path.join(__dirname, `${privateKeyPath}_private_key.json`), 'utf8'));
+        const importedPrivateKey = await importJWK(privateKey, JWE_ALGORITHM);
+
+        const { payload, protectedHeader } = await jwtDecrypt(encryptedJWT, importedPrivateKey);
+
+        console.log("-------------------");
+        console.log("decryptPayload payload: \n", payload)
+        console.log("-------------------");
+
+        console.log("-------------------");
+        console.log("decryptPayload protectedHeader: \n", protectedHeader)
+        console.log("-------------------");
+
+        return { payload, protectedHeader };
+    };
+
+    // Sign the Payload
+    async signPayload(payload, privateKeyPath) {
+        const privateKey = JSON.parse(fs.readFileSync(path.join(__dirname, `${privateKeyPath}_private_key.json`), 'utf8'));
+        const importedPrivateKey = await importJWK(privateKey, JWS_ALGORITHM);
+
+        const signedJWT = await new SignJWT(payload)
+            .setProtectedHeader({ alg: JWS_ALGORITHM })
+            .setIssuedAt()
+            .setExpirationTime('2h')
+            .sign(importedPrivateKey);
+
+        console.log("-------------------");
+        console.log("signPayload signedJWT: \n", signedJWT)
+        console.log("-------------------");
+
+        return signedJWT;
+    };
+
+    // Verify the Signed Payload
+    async verifySignedPayload (signedJWT, publicKeyPath) {
+        const publicKey = JSON.parse(fs.readFileSync(path.join(__dirname, `${publicKeyPath}_public_key.json`), 'utf8'));
+        const importedPublicKey = await importJWK(publicKey, JWS_ALGORITHM);
+
+        const { payload, protectedHeader } = await jwtVerify(signedJWT, importedPublicKey);
+        
+        console.log("-------------------");
+        console.log("verifiedPayload payload: \n", payload)
+        console.log("-------------------");
+        
+        console.log("-------------------");
+        console.log("verifiedPayload protectedHeader: \n", protectedHeader)
+        console.log("-------------------");
+
+        return { payload, protectedHeader };
+    };
+
     async getTravelRequest(transactionId) {
         // verify the required parameter 'clientId' is set
         if (!transactionId) 
@@ -147,9 +249,29 @@ class AbsherSafarAPI {
             throw new Error("Missing the required parameter 'travelRequest' when calling verifyTravelRequest");
 
         try {
+            // // const encryptedPayload = await this.encryptPayload(travelRequest);
+            // // console.log(encryptedPayload);
+
+            // // Client encrypts the request using Absher's public key
+            // const encryptedJWT = await this.encryptPayload(travelRequest, 'absher_encryption');
+            // // console.log('Encrypted JWT:', encryptedJWT);
+
+            // // Client signs the encrypted content using client's private key
+            // const signedJWT = await this.signPayload({ encryptedJWT }, 'client_signing');
+            // // console.log('Signed JWT:', signedJWT);
+
+            // // Absher verifies the signed JWT using client's public key
+            // const verifiedPayload = await this.verifySignedPayload(signedJWT, 'client_signing');
+            // // console.log('Verified Payload:', verifiedPayload);
+
+            // // Absher decrypts the verified encrypted payload using Absher's private key
+            // const decryptedPayload = await this.decryptPayload(verifiedPayload.payload.encryptedJWT, 'absher_encryption');
+            // // console.log('Decrypted Payload:', decryptedPayload);
+
             const endPoint = `/TravelRequests`;
             // Send the POST request using the configured instance
             const response = await this.apiInstance.patch(endPoint, travelRequest);
+
             return {
                 "status": response.status,
                 "data": response.data
@@ -172,9 +294,13 @@ const api = new AbsherSafarAPI(
     clientNonce = 'your-client-nonce'
 );
 
+
 console.log('\r\n');
 securos.connect(async (core) => {
     
+    // await api.generateRSAKeyPair(JWE_ALGORITHM, 'absher_encryption');
+    // await api.generateRSAKeyPair(JWS_ALGORITHM, 'client_signing');
+
     const TRANSACTION_ID = uuid.v1();
 
     /// console.log("----------------------");
